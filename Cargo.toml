@@ -1,0 +1,13 @@
+[package]
+name = "w2_20p3"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+eframe = "0.33.3"
+
+[profile.release]
+opt-level = "z"
+lto = "fat"
+codegen-units = 1
+strip = "debuginfo"
