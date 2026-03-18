@@ -70,8 +70,9 @@ impl TwentyCubedApp {
         let elapsed_and_total = self
             .countdown_state
             .as_elapsed_and_total(self.delay, self.length);
-        let remaining =
-            elapsed_and_total.map_or(Duration::ZERO, |(elapsed, total)| total - elapsed);
+        let remaining = elapsed_and_total.map_or(Duration::ZERO, |(elapsed, total)| {
+            total.saturating_sub(elapsed)
+        });
         let total = elapsed_and_total.map_or(Duration::ZERO, |(_, t)| t);
 
         ui.vertical_centered_justified(|ui| {
@@ -129,7 +130,7 @@ impl TwentyCubedApp {
 }
 
 impl App for TwentyCubedApp {
-    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.countdown_state.update(self.delay, self.length);
 
         egui::CentralPanel::default().show(ctx, |ui| {
