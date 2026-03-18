@@ -1,12 +1,20 @@
-use core::{fmt::Write, time::Duration};
+use core::{fmt::Write, ops::RangeInclusive, time::Duration};
 use std::time::SystemTime;
 
 use eframe::{
     App, NativeOptions,
-    egui::{self, Align, Color32, Layout, ProgressBar, RichText, Ui, Vec2, ViewportBuilder},
+    egui::{
+        self, Align, Color32, DragValue, Layout, ProgressBar, RichText, Slider, Ui, Vec2,
+        ViewportBuilder,
+    },
 };
 
-use crate::consts::{DEFAULT_DELAY, DEFAULT_LENGTH, TEXT_LOOK_FAR, TEXT_SETTINGS, TEXT_UNTIL_NEXT};
+use crate::consts::{
+    DEFAULT_DELAY, DEFAULT_LENGTH, DELAY_RANGE_SECS, LENGTH_RANGE_SECS, TEXT_LOOK_FAR,
+    TEXT_SETTINGS_DELAY, TEXT_SETTINGS_DELAY_TOOLTIP, TEXT_SETTINGS_LENGTH,
+    TEXT_SETTINGS_LENGTH_TOOLTIP, TEXT_SETTINGS_MENU, TEXT_UNTIL_NEXT, WINDOW_MIN_HEIGHT,
+    WINDOW_MIN_WIDTH,
+};
 
 pub mod consts;
 
@@ -67,11 +75,20 @@ impl TwentyCubedApp {
         ui.with_layout(Layout::top_down_justified(Align::Center), |ui| {
             duration_progress(ui, remaining, total);
 
-            let settings_clicked = ui.selectable_label(true, TEXT_SETTINGS).clicked();
+            let settings_clicked = ui.selectable_label(true, TEXT_SETTINGS_MENU).clicked();
+            ui.separator();
             if settings_clicked {
                 self.settings_open = false;
             }
         });
+
+        ui.label(TEXT_SETTINGS_DELAY)
+            .on_hover_text(TEXT_SETTINGS_DELAY_TOOLTIP);
+        duration_slider(ui, &mut self.delay, DELAY_RANGE_SECS, 60.0);
+        ui.add_space(12.0);
+        ui.label(TEXT_SETTINGS_LENGTH)
+            .on_hover_text(TEXT_SETTINGS_LENGTH_TOOLTIP);
+        duration_slider(ui, &mut self.length, LENGTH_RANGE_SECS, 1.0);
     }
 
     /// Returns whether or not the user confirmed starting the break.
@@ -88,7 +105,8 @@ impl TwentyCubedApp {
 
         ui.with_layout(Layout::top_down_justified(Align::Center), |ui| {
             duration_progress(ui, remaining, wait_time);
-            let settings_clicked = ui.selectable_label(false, TEXT_SETTINGS).clicked();
+            let settings_clicked = ui.selectable_label(false, TEXT_SETTINGS_MENU).clicked();
+            ui.separator();
 
             ui.with_layout(Layout::bottom_up(Align::Center), |ui| {
                 ui.label(text);
@@ -192,6 +210,82 @@ fn format_duration(duration: Duration) -> String {
     string
 }
 
+/// Format duration for `DragValue`s
+fn format_duration_dv(secs: f64) -> String {
+    let duration = Duration::from_secs_f64(secs);
+
+    let h = duration.div_duration_f64(Duration::from_hours(1)).floor();
+    let rem = duration
+        .checked_sub(Duration::from_hours(1).mul_f64(h))
+        .unwrap();
+    let m = rem.div_duration_f64(Duration::from_mins(1)).floor();
+    let rem = rem.checked_sub(Duration::from_mins(1).mul_f64(m)).unwrap();
+    let s = rem.as_secs_f64().floor();
+
+    format!("{h:02}:{m:02}:{s:02}")
+}
+
+fn parse_duration(input: &str) -> Option<Duration> {
+    let parts: Box<[&str]> = input.split(':').collect();
+
+    match *parts {
+        [secs] => secs.parse::<u64>().map(Duration::from_secs).ok(),
+        [mins, secs] => {
+            let [Ok(mins), Ok(secs)] = [mins, secs].map(str::parse::<u64>) else {
+                return None;
+            };
+            let secs = secs.saturating_add(mins.saturating_mul(60));
+            Some(Duration::from_secs(secs))
+        }
+        [hrs, mins, secs] => {
+            let [Ok(hrs), Ok(mins), Ok(secs)] = [hrs, mins, secs].map(str::parse::<u64>) else {
+                return None;
+            };
+
+            let secs = secs
+                .saturating_add(mins.saturating_mul(Duration::from_mins(1).as_secs()))
+                .saturating_add(hrs.saturating_mul(Duration::from_hours(1).as_secs()));
+
+            Some(Duration::from_secs(secs))
+        }
+        _ => None,
+    }
+}
+
+fn parse_duration_secs_f64(input: &str) -> Option<f64> {
+    parse_duration(input).map(|x| x.as_secs_f64())
+}
+
+fn duration_slider(ui: &mut Ui, duration: &mut Duration, range: RangeInclusive<u64>, step: f64) {
+    let mut duration_secs = duration.as_secs();
+    ui.with_layout(Layout::right_to_left(Align::Min), |ui| {
+        let dv = DragValue::new(&mut duration_secs)
+            .range(range.clone())
+            .clamp_existing_to_range(false)
+            .fixed_decimals(0)
+            .custom_formatter(|secs, _| format_duration_dv(secs))
+            .speed(step / 20.0)
+            .custom_parser(parse_duration_secs_f64);
+
+        ui.add(dv);
+
+        ui.style_mut().spacing.slider_width = ui.available_width();
+
+        let slider = Slider::new(&mut duration_secs, range)
+            .clamping(egui::SliderClamping::Edits)
+            .fixed_decimals(0)
+            .step_by(step)
+            .logarithmic(true)
+            .show_value(false);
+        ui.add(slider);
+    });
+
+    let new_duration = Duration::from_secs(duration_secs);
+    if new_duration != *duration {
+        *duration = new_duration;
+    }
+}
+
 fn main_duration(ui: &mut Ui, duration: Duration) {
     let string = format_duration(duration);
     #[expect(clippy::cast_precision_loss)]
@@ -216,7 +310,7 @@ fn duration_progress(ui: &mut Ui, duration: Duration, total: Duration) {
 pub fn create_native_options() -> NativeOptions {
     NativeOptions {
         viewport: ViewportBuilder {
-            min_inner_size: Some(Vec2::splat(48.0)),
+            min_inner_size: Some(Vec2::new(WINDOW_MIN_WIDTH, WINDOW_MIN_HEIGHT)),
             ..Default::default()
         },
         ..Default::default()
