@@ -6,13 +6,16 @@ use eframe::{
     egui::{self, Color32, ProgressBar, RichText, Ui, Vec2, ViewportBuilder},
 };
 
-use crate::consts::{DEFAULT_DELAY, DEFAULT_LENGTH, TEXT_UNTIL_NEXT};
+use crate::consts::{DEFAULT_DELAY, DEFAULT_LENGTH, TEXT_LOOK_FAR, TEXT_UNTIL_NEXT};
 
 pub mod consts;
 
 pub struct TwentyCubedApp {
-    last_trigger: SystemTime,
+    /// The current countdown state.
+    countdown_state: CountdownState,
+    /// The delay between breaks.
     delay: Duration,
+    /// The length of the break.
     length: Duration,
 }
 
@@ -20,7 +23,7 @@ impl TwentyCubedApp {
     #[must_use]
     pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
         Self {
-            last_trigger: SystemTime::now(),
+            countdown_state: CountdownState::default(),
             delay: DEFAULT_DELAY,
             length: DEFAULT_LENGTH,
         }
@@ -29,16 +32,77 @@ impl TwentyCubedApp {
 
 impl App for TwentyCubedApp {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        self.countdown_state.update(self.delay, self.length);
+
         egui::CentralPanel::default().show(ctx, |ui| {
-            let next_trigger = self.last_trigger + self.delay;
-            let duration = next_trigger
-                .duration_since(SystemTime::now())
-                .unwrap_or_default();
-            main_duration(duration, ui);
-            duration_progress(duration, self.delay, ui);
+            self.countdown_state.ui(ui, self.delay, self.length);
         });
 
         ctx.request_repaint_after(Duration::from_millis(250));
+    }
+}
+
+/// The current thing the countdown is waiting for.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+enum CountdownState {
+    /// Waiting for the delay between two breaks.
+    WaitingForDelay { wait_start: SystemTime },
+    /// Waiting for user confirmation to start a break.
+    PreBreak,
+    /// Waiting for the length of the break.
+    WaitingForLength { wait_start: SystemTime },
+}
+
+impl CountdownState {
+    fn update(&mut self, delay: Duration, length: Duration) {
+        match self {
+            CountdownState::WaitingForDelay { wait_start } => {
+                let wait_end = *wait_start + delay;
+                if wait_end.elapsed().is_ok() {
+                    *self = CountdownState::PreBreak;
+                }
+            }
+            CountdownState::PreBreak => (),
+            CountdownState::WaitingForLength { wait_start } => {
+                let wait_end = *wait_start + length;
+                if wait_end.elapsed().is_ok() {
+                    *self = CountdownState::WaitingForDelay {
+                        wait_start: wait_end,
+                    };
+                }
+            }
+        }
+    }
+
+    fn ui(&self, ui: &mut Ui, delay: Duration, length: Duration) {
+        match self {
+            CountdownState::WaitingForDelay { wait_start } => {
+                Self::ui_waiting(ui, TEXT_UNTIL_NEXT, *wait_start, delay);
+            }
+            CountdownState::PreBreak => {
+                todo!();
+            }
+            CountdownState::WaitingForLength { wait_start } => {
+                Self::ui_waiting(ui, TEXT_LOOK_FAR, *wait_start, length);
+            }
+        }
+    }
+
+    fn ui_waiting(ui: &mut Ui, text: &str, wait_start: SystemTime, wait_time: Duration) {
+        let elapsed = wait_start.elapsed().unwrap_or_default();
+        let remaining = wait_time.saturating_sub(elapsed);
+
+        ui.label(text);
+        main_duration(ui, remaining);
+        duration_progress(ui, remaining, wait_time);
+    }
+}
+
+impl Default for CountdownState {
+    fn default() -> Self {
+        Self::WaitingForDelay {
+            wait_start: SystemTime::now(),
+        }
     }
 }
 
@@ -62,7 +126,7 @@ fn format_duration(duration: Duration) -> String {
     string
 }
 
-fn main_duration(duration: Duration, ui: &mut Ui) {
+fn main_duration(ui: &mut Ui, duration: Duration) {
     ui.centered_and_justified(|ui| {
         let string = format_duration(duration);
         #[expect(clippy::cast_precision_loss)]
@@ -73,7 +137,7 @@ fn main_duration(duration: Duration, ui: &mut Ui) {
     });
 }
 
-fn duration_progress(duration: Duration, total: Duration, ui: &mut Ui) {
+fn duration_progress(ui: &mut Ui, duration: Duration, total: Duration) {
     let duration = Duration::from_secs(duration.as_secs());
     ui.add(
         ProgressBar::new(duration.div_duration_f32(total))
