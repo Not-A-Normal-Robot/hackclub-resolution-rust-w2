@@ -4,10 +4,15 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-eframe = "0.33.3"
+eframe = { version = "0.33.3", features = ["persistence"] }
 
 [profile.release]
 opt-level = "z"
 lto = "fat"
 codegen-units = 1
 strip = "debuginfo"
+
+[lints.clippy]
+pedantic = "warn"
+suboptimal_flops = "warn"
+imprecise_flops = "warn"
