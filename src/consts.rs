@@ -12,8 +12,10 @@ pub(crate) static TEXT_SETTINGS_DELAY_TOOLTIP: &str =
 pub(crate) static TEXT_SETTINGS_LENGTH: &str = "Break length";
 pub(crate) static TEXT_SETTINGS_LENGTH_TOOLTIP: &str =
     "How long each break should be.\nDefault: 00:00:20";
-pub(crate) static TEXT_UNTIL_NEXT: &str = "until next break";
-pub(crate) static TEXT_LOOK_FAR: &str = "Look at something 20 ft (6 m) away";
+pub(crate) static TEXT_DURING_DELAY: &str = "until next break";
+pub(crate) static TEXT_PRE_BREAK: &str = "It's time to rest your eyes";
+pub(crate) static TEXT_PRE_BREAK_BUTTON: &str = "Begin break";
+pub(crate) static TEXT_DURING_BREAK: &str = "Look at something 20 ft (6 m) away";
 
 pub(crate) const DEFAULT_DELAY: Duration = Duration::from_secs(6);
 pub(crate) const DEFAULT_LENGTH: Duration = Duration::from_secs(3);

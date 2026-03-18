@@ -10,10 +10,10 @@ use eframe::{
 };
 
 use crate::consts::{
-    DEFAULT_DELAY, DEFAULT_LENGTH, DELAY_RANGE_SECS, LENGTH_RANGE_SECS, TEXT_LOOK_FAR,
-    TEXT_SETTINGS_DELAY, TEXT_SETTINGS_DELAY_TOOLTIP, TEXT_SETTINGS_LENGTH,
-    TEXT_SETTINGS_LENGTH_TOOLTIP, TEXT_SETTINGS_MENU, TEXT_UNTIL_NEXT, WINDOW_MIN_HEIGHT,
-    WINDOW_MIN_WIDTH,
+    DEFAULT_DELAY, DEFAULT_LENGTH, DELAY_RANGE_SECS, LENGTH_RANGE_SECS, TEXT_DURING_BREAK,
+    TEXT_DURING_DELAY, TEXT_PRE_BREAK, TEXT_PRE_BREAK_BUTTON, TEXT_SETTINGS_DELAY,
+    TEXT_SETTINGS_DELAY_TOOLTIP, TEXT_SETTINGS_LENGTH, TEXT_SETTINGS_LENGTH_TOOLTIP,
+    TEXT_SETTINGS_MENU, WINDOW_MIN_HEIGHT, WINDOW_MIN_WIDTH,
 };
 
 pub mod consts;
@@ -48,7 +48,8 @@ impl TwentyCubedApp {
 
         match self.countdown_state {
             CountdownState::WaitingForDelay { wait_start } => {
-                self.settings_open = Self::ui_waiting(ui, TEXT_UNTIL_NEXT, wait_start, self.delay);
+                self.settings_open =
+                    Self::ui_waiting(ui, TEXT_DURING_DELAY, wait_start, self.delay);
             }
             CountdownState::PreBreak => {
                 let confirmed = Self::ui_confirm(ui);
@@ -59,7 +60,8 @@ impl TwentyCubedApp {
                 }
             }
             CountdownState::WaitingForLength { wait_start } => {
-                self.settings_open = Self::ui_waiting(ui, TEXT_LOOK_FAR, wait_start, self.length);
+                self.settings_open =
+                    Self::ui_waiting(ui, TEXT_DURING_BREAK, wait_start, self.length);
             }
         }
     }
@@ -72,7 +74,7 @@ impl TwentyCubedApp {
             elapsed_and_total.map_or(Duration::ZERO, |(elapsed, total)| total - elapsed);
         let total = elapsed_and_total.map_or(Duration::ZERO, |(_, t)| t);
 
-        ui.with_layout(Layout::top_down_justified(Align::Center), |ui| {
+        ui.vertical_centered_justified(|ui| {
             duration_progress(ui, remaining, total);
 
             let settings_clicked = ui.selectable_label(true, TEXT_SETTINGS_MENU).clicked();
@@ -94,7 +96,13 @@ impl TwentyCubedApp {
     /// Returns whether or not the user confirmed starting the break.
     #[must_use]
     fn ui_confirm(ui: &mut Ui) -> bool {
-        todo!();
+        ui.vertical_centered_justified(|ui| {
+            ui.label(TEXT_PRE_BREAK);
+
+            ui.centered_and_justified(|ui| ui.button(TEXT_PRE_BREAK_BUTTON).clicked())
+                .inner
+        })
+        .inner
     }
 
     /// Returns whether or not the user toggled on the settings menu.
