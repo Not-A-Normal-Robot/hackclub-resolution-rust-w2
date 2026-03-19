@@ -343,13 +343,18 @@ fn duration_progress(ui: &mut Ui, duration: Duration, total: Duration) {
 }
 
 fn notify() {
-    let _ = Notification::new()
+    let mut notification = Notification::new();
+
+    notification
         .summary(APP_NAME)
         .body(TEXT_PRE_BREAK)
         .appname(APP_NAME)
-        .hint(Hint::Resident(true))
-        .timeout(Timeout::Never)
-        .show();
+        .timeout(Timeout::Never);
+
+    #[cfg(all(unix, not(target_os = "macos")))]
+    notification.hint(Hint::Resident(true));
+
+    let _ = notification.show();
 }
 
 #[must_use]
