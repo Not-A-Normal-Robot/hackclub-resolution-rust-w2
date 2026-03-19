@@ -55,5 +55,5 @@ jobs:
         if: ${{ github.ref_type == 'tag' }}
         with:
           executable-name: w2_20p3
-          target: ${{ matrix.platform.target }}
+          target: ${{ matrix.platforms.target }}
           changes-file: ""
