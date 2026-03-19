@@ -16,8 +16,6 @@ jobs:
     name: Release — ${{ matrix.platforms.target }}
 
     strategy:
-      # DEBUG: Temporarily reduce parallelism
-      max-parallel: 1
       matrix:
         platforms:
           - target: x86_64-unknown-linux-gnu
