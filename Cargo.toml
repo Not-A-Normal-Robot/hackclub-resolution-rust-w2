@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 eframe = { version = "0.33.3", features = ["persistence"] }
+notify-rust = "4.12.0"
 
 [profile.release]
 opt-level = "z"

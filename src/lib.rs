@@ -2,15 +2,16 @@ use core::{fmt::Write, ops::RangeInclusive, time::Duration};
 use std::time::SystemTime;
 
 use eframe::{
-    App, NativeOptions, Storage,
+    App, NativeOptions,
     egui::{
         self, Align, Color32, DragValue, Layout, ProgressBar, RichText, Slider, Ui, Vec2,
         ViewportBuilder,
     },
 };
+use notify_rust::{Hint, Notification, Timeout};
 
 use crate::consts::{
-    DEFAULT_DELAY, DEFAULT_LENGTH, DELAY_RANGE_SECS, LENGTH_RANGE_SECS, SAVE_KEY_DELAY,
+    APP_NAME, DEFAULT_DELAY, DEFAULT_LENGTH, DELAY_RANGE_SECS, LENGTH_RANGE_SECS, SAVE_KEY_DELAY,
     SAVE_KEY_LENGTH, TEXT_DURING_BREAK, TEXT_DURING_DELAY, TEXT_PRE_BREAK, TEXT_PRE_BREAK_BUTTON,
     TEXT_SETTINGS_DELAY, TEXT_SETTINGS_DELAY_TOOLTIP, TEXT_SETTINGS_LENGTH,
     TEXT_SETTINGS_LENGTH_TOOLTIP, TEXT_SETTINGS_MENU, WINDOW_MIN_HEIGHT, WINDOW_MIN_WIDTH,
@@ -184,6 +185,7 @@ impl CountdownState {
                 let wait_end = *wait_start + delay;
                 if wait_end.elapsed().is_ok() {
                     *self = CountdownState::PreBreak;
+                    notify();
                 }
             }
             CountdownState::PreBreak => (),
@@ -340,11 +342,22 @@ fn duration_progress(ui: &mut Ui, duration: Duration, total: Duration) {
     );
 }
 
+fn notify() {
+    let _ = Notification::new()
+        .summary(APP_NAME)
+        .body(TEXT_PRE_BREAK)
+        .appname(APP_NAME)
+        .hint(Hint::Resident(true))
+        .timeout(Timeout::Never)
+        .show();
+}
+
 #[must_use]
 pub fn create_native_options() -> NativeOptions {
     NativeOptions {
         viewport: ViewportBuilder {
             min_inner_size: Some(Vec2::new(WINDOW_MIN_WIDTH, WINDOW_MIN_HEIGHT)),
+            app_id: Some(String::from("20-20-20")),
             ..Default::default()
         },
         ..Default::default()
