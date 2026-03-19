@@ -56,3 +56,4 @@ jobs:
         with:
           executable-name: w2_20p3
           target: ${{ matrix.platform.target }}
+          changes-file: ""
