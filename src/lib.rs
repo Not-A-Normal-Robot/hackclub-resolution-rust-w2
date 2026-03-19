@@ -2,7 +2,7 @@ use core::{fmt::Write, ops::RangeInclusive, time::Duration};
 use std::time::SystemTime;
 
 use eframe::{
-    App, NativeOptions,
+    App, NativeOptions, Storage,
     egui::{
         self, Align, Color32, DragValue, Layout, ProgressBar, RichText, Slider, Ui, Vec2,
         ViewportBuilder,
@@ -10,10 +10,10 @@ use eframe::{
 };
 
 use crate::consts::{
-    DEFAULT_DELAY, DEFAULT_LENGTH, DELAY_RANGE_SECS, LENGTH_RANGE_SECS, TEXT_DURING_BREAK,
-    TEXT_DURING_DELAY, TEXT_PRE_BREAK, TEXT_PRE_BREAK_BUTTON, TEXT_SETTINGS_DELAY,
-    TEXT_SETTINGS_DELAY_TOOLTIP, TEXT_SETTINGS_LENGTH, TEXT_SETTINGS_LENGTH_TOOLTIP,
-    TEXT_SETTINGS_MENU, WINDOW_MIN_HEIGHT, WINDOW_MIN_WIDTH,
+    DEFAULT_DELAY, DEFAULT_LENGTH, DELAY_RANGE_SECS, LENGTH_RANGE_SECS, SAVE_KEY_DELAY,
+    SAVE_KEY_LENGTH, TEXT_DURING_BREAK, TEXT_DURING_DELAY, TEXT_PRE_BREAK, TEXT_PRE_BREAK_BUTTON,
+    TEXT_SETTINGS_DELAY, TEXT_SETTINGS_DELAY_TOOLTIP, TEXT_SETTINGS_LENGTH,
+    TEXT_SETTINGS_LENGTH_TOOLTIP, TEXT_SETTINGS_MENU, WINDOW_MIN_HEIGHT, WINDOW_MIN_WIDTH,
 };
 
 pub mod consts;
@@ -31,13 +31,33 @@ pub struct TwentyCubedApp {
 
 impl TwentyCubedApp {
     #[must_use]
-    pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
-        Self {
+    pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+        let mut retval = Self {
             countdown_state: CountdownState::default(),
             settings_open: false,
             delay: DEFAULT_DELAY,
             length: DEFAULT_LENGTH,
+        };
+
+        let Some(storage) = cc.storage else {
+            return retval;
+        };
+
+        let [delay, length] = [SAVE_KEY_DELAY, SAVE_KEY_LENGTH].map(|key| {
+            storage
+                .get_string(key)
+                .and_then(|str| str.parse::<u64>().ok())
+                .map(Duration::from_secs)
+        });
+
+        if let Some(delay) = delay {
+            retval.delay = delay;
         }
+        if let Some(length) = length {
+            retval.length = length;
+        }
+
+        retval
     }
 
     fn ui(&mut self, ui: &mut Ui) {
@@ -138,6 +158,11 @@ impl App for TwentyCubedApp {
         });
 
         ctx.request_repaint_after(Duration::from_millis(250));
+    }
+
+    fn save(&mut self, storage: &mut dyn eframe::Storage) {
+        storage.set_string(SAVE_KEY_DELAY, self.delay.as_secs().to_string());
+        storage.set_string(SAVE_KEY_LENGTH, self.length.as_secs().to_string());
     }
 }
 

@@ -2,6 +2,11 @@ use core::{ops::RangeInclusive, time::Duration};
 
 pub static APP_NAME: &str = "20³";
 
+pub(crate) static SAVE_KEY_DELAY: &str =
+    "io.github.not-a-normal-robot.rust-resolution.w2_20p3.break-delay";
+pub(crate) static SAVE_KEY_LENGTH: &str =
+    "io.github.not-a-normal-robot.rust-resolution.w2_20p3.break-length";
+
 pub(crate) const WINDOW_MIN_WIDTH: f32 = 256.0;
 pub(crate) const WINDOW_MIN_HEIGHT: f32 = 144.0;
 
@@ -17,8 +22,8 @@ pub(crate) static TEXT_PRE_BREAK: &str = "It's time to rest your eyes";
 pub(crate) static TEXT_PRE_BREAK_BUTTON: &str = "Begin break";
 pub(crate) static TEXT_DURING_BREAK: &str = "Look at something 20 ft (6 m) away";
 
-pub(crate) const DEFAULT_DELAY: Duration = Duration::from_secs(6);
-pub(crate) const DEFAULT_LENGTH: Duration = Duration::from_secs(3);
+pub(crate) const DEFAULT_DELAY: Duration = Duration::from_mins(20);
+pub(crate) const DEFAULT_LENGTH: Duration = Duration::from_secs(20);
 
 pub(crate) const DELAY_RANGE: RangeInclusive<Duration> =
     Duration::from_mins(5)..=Duration::from_hours(5);
