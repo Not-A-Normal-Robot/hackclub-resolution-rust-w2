@@ -11,13 +11,42 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    name: Release — ${{ matrix.platforms.target }}
+
+    strategy:
+      matrix:
+        platforms:
+          - target: x86_64-unknown-linux-gnu
+            runs-on: ubuntu-latest
+          - target: x86_64-unknown-linux-musl
+            runs-on: ubuntu-latest
+          - target: x86_64-pc-windows-gnu
+            runs-on: ubuntu-latest
+          - target: aarch64-unknown-linux-gnu
+            runs-on: ubuntu-latest
+          - target: aarch64-unknown-linux-musl
+            runs-on: ubuntu-latest
+          - target: aarch64-pc-windows-gnullvm
+            runs-on: ubuntu-latest
+          - target: armv7-unknown-linux-gnueabihf
+            runs-on: ubuntu-latest
+          - target: armv7-unknown-linux-musleabihf
+            runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-      - name: Setup Rust toolchain
-        uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Build binary
+        uses: houseabsolute/actions-rust-cross@v1
         with:
-          target: x86_64-unknown-linux-gnu,x86_64-unknown-linux-musl,x86_64-pc-windows-gnu,aarch64-unknown-linux-gnu,aarch64-unknown-linux-musl,aarch64-pc-windows-gnullvm,armv7-unknown-linux-gnueabihf,armv7-unknown-linux-musleabihf
-          rustflags: ""
-      - name: Release
-        uses: softprops/action-gh-release@v2
+          command: build
+          target: ${{ matrix.platforms.target }}
+          args: "--locked --release"
+      - name: Publish artifacts and release
+        uses: houseabsolute/actions-rust-release@v0
+        with:
+          executable-name: ubi
+          target: ${{ matrix.platform.target }}
+      # - name: Release
+      #   uses: softprops/action-gh-release@v2
