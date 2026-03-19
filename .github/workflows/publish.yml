@@ -5,8 +5,8 @@ permissions:
 
 on:
   push:
-    # tags:
-    #   - "v*.*.*"
+    tags:
+      - "v*.*.*"
   workflow_dispatch:
 
 jobs:
@@ -16,7 +16,6 @@ jobs:
     name: Release — ${{ matrix.platforms.target }}
 
     strategy:
-      # max-parallel: 1
       matrix:
         platforms:
           - target: x86_64-unknown-linux-gnu
