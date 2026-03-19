@@ -7,6 +7,7 @@ on:
   push:
     # tags:
     #   - "v*.*.*"
+  workflow-dispatch:
 
 jobs:
   build:
@@ -48,8 +49,7 @@ jobs:
           args: "--locked --release"
       - name: Publish artifacts and release
         uses: houseabsolute/actions-rust-release@v0
+        if: ${{ github.ref_type == "tag" }}
         with:
           executable-name: w2_20p3
           target: ${{ matrix.platform.target }}
-      # - name: Release
-      #   uses: softprops/action-gh-release@v2
