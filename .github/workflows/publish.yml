@@ -35,7 +35,12 @@ jobs:
             runs-on: ubuntu-latest
           - target: armv7-unknown-linux-musleabihf
             runs-on: ubuntu-latest
-          # TODO: i686?
+          - target: i686-pc-windows-msvc
+            runs-on: windows-latest
+          - target: i686-unknown-linux-gnu
+            runs-on: ubuntu-latest
+          - target: i686-unknown-linux-musl
+            runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
