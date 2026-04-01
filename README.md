@@ -10,3 +10,6 @@ This program also allows you to set custom durations.
 
 ## Download
 Download the latest release <a href="releases/latest">from GitHub Releases</a>.
+
+## Event
+This project was made as an entry for [Week 2 of Hack Club Resolution Rust](https://rust.resolution.hackclub.com/).
